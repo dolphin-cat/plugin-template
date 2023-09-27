@@ -12,7 +12,7 @@
     "type": "github",
     "id": "dolphin-cat/sideproject-684924"
   },
-  "license": "MIT",
+  "license": "GPLV3",
   "type": "replugged-plugin",
   "renderer": "src/index.ts",
   "source": "https://github.com/dolphin-cat/sideproject-684924",
