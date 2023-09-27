@@ -4,7 +4,7 @@
 
 # dolphinandcat's TimeUtils plugin
 
-\<ct> replaces it with the current time embedded with discord's <t:> embed <br /> \<ctt> replaces it
+\<ct> replaces it with the current time embedded with discord's <t:> embed <br/> \<ctt> replaces it
 with current time and date in plaintext in local timezone <br/> \<ctt:(+/-hour)> replaces it with
 current time in plaintext under a different GMT timezone <br/> \<ctc> replaces it with the current
 time embedded as a countdown
