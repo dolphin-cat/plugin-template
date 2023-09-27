@@ -7,7 +7,7 @@
     "discordID": "759831554347237508",
     "github": "dolphin-cat"
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "updater": {
     "type": "github",
     "id": "dolphin-cat/sideproject-684924"
