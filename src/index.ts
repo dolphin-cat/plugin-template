@@ -5,9 +5,13 @@ import { getTimezoneNameByOffset } from "tzname";
 const { messages } = common;
 const inject = new Injector();
 export const logger = Logger.plugin("TimeUtils");
-const regexPattern = /<((ctt?|abst+t*)c?[^>]*)(:[^>]*)?>/gim;
+const regexPattern = /<((ctt?|abst+t*|rt+t*)c?[^>]*)(:[^>]*)?>/gim;
 
-function parseTimeString(currentdate: Date, input: string): Record<string, string> {
+function parseTimeString(
+  currentdate: Date,
+  input: string,
+  relative = false,
+): Record<string, string> {
   const units: Record<string, string> = {
     y: "years",
     o: "months",
@@ -19,18 +23,19 @@ function parseTimeString(currentdate: Date, input: string): Record<string, strin
 
   const result: Record<string, string> = {
     years: currentdate.getFullYear().toString().padStart(4, "0"),
-    months: currentdate.getMonth().toString().padStart(2, "0"),
+    months: (currentdate.getMonth() + 1).toString().padStart(2, "0"),
     days: currentdate.getDate().toString().padStart(2, "0"),
     hours: currentdate.getHours().toString().padStart(2, "0"),
     minutes: currentdate.getMinutes().toString().padStart(2, "0"),
     seconds: currentdate.getSeconds().toString().padStart(2, "0"),
   };
+  console.log(result);
 
   let currentNumber = "";
   let currentUnit = "";
 
   for (const char of input) {
-    if (/[0-9]/.test(char)) {
+    if (/[0-9]/.test(char) || char == "-") {
       currentNumber += char;
     } else if (units[char]) {
       currentUnit = units[char];
@@ -39,6 +44,11 @@ function parseTimeString(currentdate: Date, input: string): Record<string, strin
     }
 
     if (currentNumber !== "" && currentUnit !== "") {
+      if (relative) {
+        currentNumber = (
+          parseInt(currentNumber, 10) + parseInt(result[currentUnit], 10)
+        ).toString();
+      }
       // Pad the numeric value based on the unit
       const paddedValue =
         currentUnit === "years" ? currentNumber.padStart(4, "0") : currentNumber.padStart(2, "0");
@@ -116,7 +126,6 @@ function solver(match: string): string {
         }
       } else if (match.startsWith("<abst:")) {
         const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1));
-        debugger;
         return `<t:${Math.round(
           new Date(
             `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
@@ -124,6 +133,60 @@ function solver(match: string): string {
         ).toString()}>`;
       } else if (match.startsWith("<abstc:")) {
         const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1));
+        console.log(
+          `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
+        );
+        return (
+          "<t:" +
+          Math.round(
+            new Date(
+              `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
+            ).getTime() / 1000,
+          ).toString() +
+          ":R>"
+        );
+      } else if (match.startsWith("<rtt:")) {
+        if (match.split(":").length == 2) {
+          const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1), true);
+          return new Date(
+            `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
+          ).toLocaleDateString("en-us", {
+            weekday: "long",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+          });
+        } else if (match.split(":").length == 3) {
+          const parsedtime = parseTimeString(new Date(), match.split(":")[1], true);
+
+          return new Date(
+            `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
+          ).toLocaleDateString("en-us", {
+            weekday: "long",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+            timeZone: getTimezoneNameByOffset(
+              match.split(":")[2].slice(0, -1).replace("UTC", "").replace("GMT", ""),
+            ),
+            timeZoneName: "shortOffset",
+          });
+        }
+      } else if (match.startsWith("<rt:")) {
+        const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1), true);
+        return `<t:${Math.round(
+          new Date(
+            `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
+          ).getTime() / 1000,
+        ).toString()}>`;
+      } else if (match.startsWith("<rtc:")) {
+        const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1), true);
         return (
           "<t:" +
           Math.round(
