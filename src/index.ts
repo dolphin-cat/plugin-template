@@ -1,12 +1,14 @@
-import { common, Injector, Logger } from "replugged";
+/* eslint-disable prefer-template */
+import { Injector, Logger, common } from "replugged";
 import { getTimezoneNameByOffset } from "tzname";
 
 const { messages } = common;
 const inject = new Injector();
 export const logger = Logger.plugin("TimeUtils");
+const regexPattern = /<((ctt?|abst+t*)c?[^>]*)(:[^>]*)?>/gim;
 
-function parseTimeString(currentdate, input) {
-  const units = {
+function parseTimeString(currentdate: Date, input: string): Record<string, string> {
+  const units: Record<string, string> = {
     y: "years",
     o: "months",
     d: "days",
@@ -15,13 +17,13 @@ function parseTimeString(currentdate, input) {
     s: "seconds",
   };
 
-  const result = {
-    years: currentdate.getFullYear().padStart(4, "0"),
-    months: currentdate.getMonth().padStart(2, "0"),
-    days: currentdate.getDate().padStart(2, "0"),
-    hours: currentdate.getHours().padStart(2, "0"),
-    minutes: currentdate.getMinutes().padStart(2, "0"),
-    seconds: currentdate.getSeconds().padStart(2, "0"),
+  const result: Record<string, string> = {
+    years: currentdate.getFullYear().toString().padStart(4, "0"),
+    months: currentdate.getMonth().toString().padStart(2, "0"),
+    days: currentdate.getDate().toString().padStart(2, "0"),
+    hours: currentdate.getHours().toString().padStart(2, "0"),
+    minutes: currentdate.getMinutes().toString().padStart(2, "0"),
+    seconds: currentdate.getSeconds().toString().padStart(2, "0"),
   };
 
   let currentNumber = "";
@@ -67,7 +69,6 @@ function solver(match: string): string {
       });
     default:
       if (match.startsWith("<ctt:")) {
-        console.log(match.split(":")[1].slice(0, -1));
         return new Date().toLocaleDateString("en-us", {
           weekday: "long",
           year: "numeric",
@@ -85,17 +86,7 @@ function solver(match: string): string {
         if (match.split(":").length == 2) {
           const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1));
           return new Date(
-            parsedtime["years"] +
-              "-" +
-              parsedtime["months"] +
-              "-" +
-              parsedtime["days"] +
-              "T" +
-              parsedtime["hours"] +
-              ":" +
-              parsedtime["minutes"] +
-              ":" +
-              parsedtime["seconds"],
+            `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
           ).toLocaleDateString("en-us", {
             weekday: "long",
             year: "numeric",
@@ -106,20 +97,9 @@ function solver(match: string): string {
             second: "numeric",
           });
         } else if (match.split(":").length == 3) {
-          console.log("3");
           const parsedtime = parseTimeString(new Date(), match.split(":")[1]);
           return new Date(
-            parsedtime["years"] +
-              "-" +
-              parsedtime["months"] +
-              "-" +
-              parsedtime["days"] +
-              "T" +
-              parsedtime["hours"] +
-              ":" +
-              parsedtime["minutes"] +
-              ":" +
-              parsedtime["seconds"],
+            `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
           ).toLocaleDateString("en-us", {
             weekday: "long",
             year: "numeric",
@@ -136,54 +116,33 @@ function solver(match: string): string {
         }
       } else if (match.startsWith("<abst:")) {
         const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1));
-        return (
-          "<t:" +
-          Math.round(
-            new Date(
-              parsedtime["years"] +
-                "-" +
-                parsedtime["months"] +
-                "-" +
-                parsedtime["days"] +
-                "T" +
-                parsedtime["hours"] +
-                ":" +
-                parsedtime["minutes"] +
-                ":" +
-                parsedtime["seconds"],
-            ).getTime() / 1000,
-          ).toString() +
-          ">"
-        );
+        debugger;
+        return `<t:${Math.round(
+          new Date(
+            `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
+          ).getTime() / 1000,
+        ).toString()}>`;
       } else if (match.startsWith("<abstc:")) {
         const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1));
         return (
           "<t:" +
           Math.round(
             new Date(
-              parsedtime["years"] +
-                "-" +
-                parsedtime["months"] +
-                "-" +
-                parsedtime["days"] +
-                "T" +
-                parsedtime["hours"] +
-                ":" +
-                parsedtime["minutes"] +
-                ":" +
-                parsedtime["seconds"],
+              `${parsedtime.years}-${parsedtime.months}-${parsedtime.days}T${parsedtime.hours}:${parsedtime.minutes}:${parsedtime.seconds}`,
             ).getTime() / 1000,
           ).toString() +
           ":R>"
         );
+      } else {
+        return match;
       }
   }
+  return match;
 }
 
 export function start(): void {
   inject.before(messages, "sendMessage", (props) => {
     let { content } = props[1];
-    const regexPattern = RegExp("<((ctt?|abst+t*)c?[^>]*)(:[^>]*)?>", "gmi");
     content = content.replaceAll(regexPattern, solver);
     props[1].content = content;
     return props;

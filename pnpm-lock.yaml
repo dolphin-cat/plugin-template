@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-dependencies:
-  tzname:
-    specifier: ^1.0.0
-    version: 1.0.0
-
 devDependencies:
   '@types/node':
     specifier: ^20.6.1
@@ -40,6 +35,9 @@ devDependencies:
   typescript:
     specifier: ^5.2.2
     version: 5.2.2
+  tzname:
+    specifier: ^1.0.0
+    version: 1.0.0
 
 packages:
 
@@ -4484,7 +4482,7 @@ packages:
 
   /tzname@1.0.0:
     resolution: {integrity: sha512-dp/fyV9jAm3jYKXO8mz3W+fvSDQw5nDqhfxI6YDzEfgEz6jLDTorNsl25Gf9tkCoNwntKkdzCO6ly9BCdWdBfQ==}
-    dev: false
+    dev: true
 
   /unbox-primitive@1.0.2:
     resolution: {integrity: sha512-61pPlCD9h51VoreyJ0BReideM3MDKMKnh6+V9L08331ipq6Q8OFXZYiqP6n/tbHx4s5I9uRhcye6BrbkizkBDw==}
