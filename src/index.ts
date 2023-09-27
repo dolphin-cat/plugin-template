@@ -5,7 +5,7 @@ const { messages } = common;
 const inject = new Injector();
 export const logger = Logger.plugin("TimeUtils");
 
-function parseTimeString(input) {
+function parseTimeString(currentdate, input) {
   const units = {
     y: "years",
     o: "months",
@@ -16,12 +16,12 @@ function parseTimeString(input) {
   };
 
   const result = {
-    years: "0000", // Padded with 4 zeros
-    months: "00", // Padded with 2 zeros
-    days: "00", // Padded with 2 zeros
-    hours: "00", // Padded with 2 zeros
-    minutes: "00", // Padded with 2 zeros
-    seconds: "00", // Padded with 2 zeros
+    years: currentdate.getFullYear().padStart(4, "0"),
+    months: currentdate.getMonth().padStart(2, "0"),
+    days: currentdate.getDate().padStart(2, "0"),
+    hours: currentdate.getHours().padStart(2, "0"),
+    minutes: currentdate.getMinutes().padStart(2, "0"),
+    seconds: currentdate.getSeconds().padStart(2, "0"),
   };
 
   let currentNumber = "";
@@ -83,7 +83,7 @@ function solver(match: string): string {
         });
       } else if (match.startsWith("<abstt:")) {
         if (match.split(":").length == 2) {
-          const parsedtime = parseTimeString(match.split(":")[1].slice(0, -1));
+          const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1));
           return new Date(
             parsedtime["years"] +
               "-" +
@@ -107,7 +107,7 @@ function solver(match: string): string {
           });
         } else if (match.split(":").length == 3) {
           console.log("3");
-          const parsedtime = parseTimeString(match.split(":")[1]);
+          const parsedtime = parseTimeString(new Date(), match.split(":")[1]);
           return new Date(
             parsedtime["years"] +
               "-" +
@@ -135,7 +135,7 @@ function solver(match: string): string {
           });
         }
       } else if (match.startsWith("<abst:")) {
-        const parsedtime = parseTimeString(match.split(":")[1].slice(0, -1));
+        const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1));
         return (
           "<t:" +
           Math.round(
@@ -156,7 +156,7 @@ function solver(match: string): string {
           ">"
         );
       } else if (match.startsWith("<abstc:")) {
-        const parsedtime = parseTimeString(match.split(":")[1].slice(0, -1));
+        const parsedtime = parseTimeString(new Date(), match.split(":")[1].slice(0, -1));
         return (
           "<t:" +
           Math.round(
