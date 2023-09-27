@@ -1,20 +1,22 @@
 {
-  "id": "dev.replugged.PluginTemplate",
-  "name": "Plugin Template",
-  "description": "A plugin template",
+  "id": "nosite.dolphinandcat.TimeUtils",
+  "name": "TimeUtils",
+  "description": "A plugin to make disord time embedding easier.",
   "author": {
-    "name": "replugged",
-    "discordID": "1000992611840049192",
-    "github": "replugged-org"
+    "name": "dolphinandcat",
+    "discordID": "759831554347237508",
+    "github": "dolphin-cat"
   },
   "version": "1.0.0",
   "updater": {
     "type": "github",
-    "id": "replugged-org/plugin-template"
+    "id": "dolphin-cat/sideproject-684924"
   },
   "license": "MIT",
   "type": "replugged-plugin",
   "renderer": "src/index.ts",
-  "source": "https://github.com/replugged-org/plugin-template",
-  "image": ["https://i.imgur.com/14CNs3a.png?CHANGE-THIS-URL"]
+  "source": "https://github.com/dolphin-cat/sideproject-684924",
+  "image": [
+    "https://www.outsystems.com/Forge_CW/_image.aspx/Q8LvY--6WakOw9afDCuuGVgJFag8Y7k4mfELB7di--o=/date-time-utils-2023-01-04%2000-00-00-2023-06-16%2007-20-14"
+  ]
 }

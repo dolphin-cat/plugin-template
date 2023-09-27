@@ -1,24 +1,193 @@
-import { Injector, Logger, webpack } from "replugged";
+import { common, Injector, Logger } from "replugged";
+import { getTimezoneNameByOffset } from "tzname";
 
+const { messages } = common;
 const inject = new Injector();
-const logger = Logger.plugin("PluginTemplate");
+export const logger = Logger.plugin("TimeUtils");
 
-export async function start(): Promise<void> {
-  const typingMod = await webpack.waitForModule<{
-    startTyping: (channelId: string) => void;
-  }>(webpack.filters.byProps("startTyping"));
-  const getChannelMod = await webpack.waitForModule<{
-    getChannel: (id: string) => {
-      name: string;
-    };
-  }>(webpack.filters.byProps("getChannel"));
+function parseTimeString(input) {
+  const units = {
+    y: "years",
+    o: "months",
+    d: "days",
+    h: "hours",
+    m: "minutes",
+    s: "seconds",
+  };
 
-  if (typingMod && getChannelMod) {
-    inject.instead(typingMod, "startTyping", ([channel]) => {
-      const channelObj = getChannelMod.getChannel(channel);
-      logger.log(`Typing prevented! Channel: #${channelObj?.name ?? "unknown"} (${channel}).`);
-    });
+  const result = {
+    years: "0000", // Padded with 4 zeros
+    months: "00", // Padded with 2 zeros
+    days: "00", // Padded with 2 zeros
+    hours: "00", // Padded with 2 zeros
+    minutes: "00", // Padded with 2 zeros
+    seconds: "00", // Padded with 2 zeros
+  };
+
+  let currentNumber = "";
+  let currentUnit = "";
+
+  for (const char of input) {
+    if (/[0-9]/.test(char)) {
+      currentNumber += char;
+    } else if (units[char]) {
+      currentUnit = units[char];
+    } else {
+      continue; // Ignore invalid characters
+    }
+
+    if (currentNumber !== "" && currentUnit !== "") {
+      // Pad the numeric value based on the unit
+      const paddedValue =
+        currentUnit === "years" ? currentNumber.padStart(4, "0") : currentNumber.padStart(2, "0");
+      result[currentUnit] = paddedValue;
+      currentNumber = "";
+      currentUnit = "";
+    }
   }
+
+  return result;
+}
+
+function solver(match: string): string {
+  switch (match) {
+    case "<ct>":
+      return "<t:" + Math.round(new Date().getTime() / 1000).toString() + ">";
+    case "<ctc>":
+      return "<t:" + Math.round(new Date().getTime() / 1000).toString() + ":R>";
+    case "<ctt>":
+      return new Date().toLocaleDateString("en-us", {
+        weekday: "long",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+      });
+    default:
+      if (match.startsWith("<ctt:")) {
+        console.log(match.split(":")[1].slice(0, -1));
+        return new Date().toLocaleDateString("en-us", {
+          weekday: "long",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+          timeZone: getTimezoneNameByOffset(
+            match.split(":")[1].slice(0, -1).replace("UTC+", "").replace("GMT+", ""),
+          ),
+          timeZoneName: "shortOffset",
+        });
+      } else if (match.startsWith("<abstt:")) {
+        if (match.split(":").length == 2) {
+          const parsedtime = parseTimeString(match.split(":")[1].slice(0, -1));
+          return new Date(
+            parsedtime["years"] +
+              "-" +
+              parsedtime["months"] +
+              "-" +
+              parsedtime["days"] +
+              "T" +
+              parsedtime["hours"] +
+              ":" +
+              parsedtime["minutes"] +
+              ":" +
+              parsedtime["seconds"],
+          ).toLocaleDateString("en-us", {
+            weekday: "long",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+          });
+        } else if (match.split(":").length == 3) {
+          console.log("3");
+          const parsedtime = parseTimeString(match.split(":")[1]);
+          return new Date(
+            parsedtime["years"] +
+              "-" +
+              parsedtime["months"] +
+              "-" +
+              parsedtime["days"] +
+              "T" +
+              parsedtime["hours"] +
+              ":" +
+              parsedtime["minutes"] +
+              ":" +
+              parsedtime["seconds"],
+          ).toLocaleDateString("en-us", {
+            weekday: "long",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+            timeZone: getTimezoneNameByOffset(
+              match.split(":")[2].slice(0, -1).replace("UTC", "").replace("GMT", ""),
+            ),
+            timeZoneName: "shortOffset",
+          });
+        }
+      } else if (match.startsWith("<abst:")) {
+        const parsedtime = parseTimeString(match.split(":")[1].slice(0, -1));
+        return (
+          "<t:" +
+          Math.round(
+            new Date(
+              parsedtime["years"] +
+                "-" +
+                parsedtime["months"] +
+                "-" +
+                parsedtime["days"] +
+                "T" +
+                parsedtime["hours"] +
+                ":" +
+                parsedtime["minutes"] +
+                ":" +
+                parsedtime["seconds"],
+            ).getTime() / 1000,
+          ).toString() +
+          ">"
+        );
+      } else if (match.startsWith("<abstc:")) {
+        const parsedtime = parseTimeString(match.split(":")[1].slice(0, -1));
+        return (
+          "<t:" +
+          Math.round(
+            new Date(
+              parsedtime["years"] +
+                "-" +
+                parsedtime["months"] +
+                "-" +
+                parsedtime["days"] +
+                "T" +
+                parsedtime["hours"] +
+                ":" +
+                parsedtime["minutes"] +
+                ":" +
+                parsedtime["seconds"],
+            ).getTime() / 1000,
+          ).toString() +
+          ":R>"
+        );
+      }
+  }
+}
+
+export function start(): void {
+  inject.before(messages, "sendMessage", (props) => {
+    let { content } = props[1];
+    const regexPattern = RegExp("<((ctt?|abst+t*)c?[^>]*)(:[^>]*)?>", "gmi");
+    content = content.replaceAll(regexPattern, solver);
+    props[1].content = content;
+    return props;
+  });
 }
 
 export function stop(): void {
